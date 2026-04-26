@@ -364,8 +364,9 @@ Text:
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://customscolab.onrender.com",
-                    "X-Title": "CustomsColab Pro",
+                    "HTTP-Referer": "https://customsiq.app",
+                    "X-Title": "CustomsIQ",
+                    
                 },
                 json={
                     "model": "google/gemini-2.0-flash-001",
