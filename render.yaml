@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: customscolab-pro
+    env: python
+    buildCommand: |
+      apt-get update && apt-get install -y tesseract-ocr tesseract-ocr-eng poppler-utils && pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+    healthCheckPath: /api/state
