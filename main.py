@@ -73,7 +73,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount static files — graceful if folder missing
+import pathlib
+if pathlib.Path("static").exists():
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+else:
+    logger.warning("static/ folder not found — skipping static file mount")
 
 # ─────────────────────────────────────────────
 # GLOBAL STATE
@@ -288,7 +293,10 @@ def _extract_pdf(content: bytes) -> str:
             logger.warning(f"pdf2image/OCR pipeline error: {e}")
 
     # ── Layer 3: return whatever we have (even if partial) ──
-    result = digital_text.strip() or ocr_text if 'ocr_text' in dir() else digital_text.strip()
+    try:
+        result = digital_text.strip() or ocr_text.strip()
+    except NameError:
+        result = digital_text.strip()
     logger.warning(f"PDF extraction yielded limited text ({len(result)} chars) — AI will use what's available")
     return result
 
@@ -364,9 +372,8 @@ Text:
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://customsiq.app",
-                    "X-Title": "CustomsIQ",
-                    
+                    "HTTP-Referer": "https://customscolab.onrender.com",
+                    "X-Title": "CustomsColab Pro",
                 },
                 json={
                     "model": "google/gemini-2.0-flash-001",
