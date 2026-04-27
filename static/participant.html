@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CustomsColab — Join Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --deep:    #0d3b6e;
+  --navy:    #1565a8;
+  --mid:     #1e88e5;
+  --sky:     #4fc3f7;
+  --pale:    #e3f2fd;
+  --lighter: #f0f7ff;
+  --white:   #ffffff;
+  --border:  rgba(21,101,168,.15);
+  --bord2:   rgba(21,101,168,.28);
+  --tdark:   #0d3b6e;
+  --tmid:    #1565a8;
+  --tmuted:  #6096c8;
+  --green:   #00897b;
+  --green-l: #e0f2f1;
+  --red:     #c62828;
+  --red-l:   #ffebee;
+  --gold:    #f9a825;
+  --font-s:  'Libre Baskerville', serif;
+  --font-u:  'Source Sans 3', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:var(--font-u); background:var(--lighter); color:var(--tdark); min-height:100vh; overflow-x:hidden; }
+
+/* BG */
+.bg { position:fixed; inset:0; z-index:0;
+  background:linear-gradient(160deg,#eaf4fd 0%,#f0f8ff 60%,#e3effa 100%); overflow:hidden; }
+.bw { position:absolute; left:-10%; right:-10%; height:220px; border-radius:50%; opacity:.07;
+  animation:wd ease-in-out infinite alternate; }
+.bw1 { top:-60px; background:var(--navy); animation-duration:7s; }
+.bw2 { bottom:-40px; background:var(--sky); animation-duration:9s; animation-delay:-3s; }
+@keyframes wd { from{transform:translateY(0)} to{transform:translateY(14px)} }
+.bgrid { position:absolute; inset:0;
+  background-image:linear-gradient(rgba(21,101,168,.04) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(21,101,168,.04) 1px,transparent 1px);
+  background-size:44px 44px; }
+.bc { position:absolute; border-radius:50%; background:rgba(30,136,229,.06);
+  animation:fc ease-in-out infinite alternate; }
+@keyframes fc { from{transform:translateY(0) scale(1)} to{transform:translateY(-16px) scale(1.05)} }
+
+/* LAYOUT */
+.app { position:relative; z-index:10; min-height:100vh; display:flex; flex-direction:column; }
+
+/* HEADER */
+.header { padding:14px 20px; text-align:center; background:var(--deep);
+  box-shadow:0 2px 12px rgba(13,59,110,.18); position:sticky; top:0; z-index:100; }
+.hlogo { font-family:var(--font-s); font-size:1rem; color:white; }
+.hsub { font-size:.72rem; color:rgba(255,255,255,.55); margin-top:3px; }
+.hacc { height:3px; background:linear-gradient(90deg,var(--deep),var(--sky),white,var(--sky),var(--deep));
+  background-size:200% 100%; animation:al 4s linear infinite; }
+@keyframes al { from{background-position:0 0} to{background-position:200% 0} }
+
+/* SCREENS */
+.screen { display:none; flex:1; padding:22px 18px; }
+.screen.active { display:flex; flex-direction:column; }
+
+/* JOIN */
+.join-hero { text-align:center; margin:18px 0 28px; }
+.ji { font-size:3.6rem; animation:float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.jt { font-family:var(--font-s); font-size:1.5rem; color:var(--deep); margin:10px 0 5px; }
+.js { font-size:.88rem; color:var(--tmuted); }
+
+.form-card { background:white; border:1px solid var(--border); border-radius:16px; padding:22px; box-shadow:0 4px 14px rgba(13,59,110,.07); }
+.fl { font-size:.76rem; color:var(--tmid); margin-bottom:5px; display:block; font-weight:600; }
+.fi { width:100%; background:var(--lighter); border:1.5px solid var(--bord2); border-radius:10px;
+  padding:12px 14px; color:var(--tdark); font-family:var(--font-s); font-size:.95rem; outline:none;
+  transition:border-color .2s,box-shadow .2s; margin-bottom:14px; }
+.fi:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(21,101,168,.1); }
+.btn-join { width:100%; background:var(--deep); color:white; border:none; border-radius:12px;
+  padding:14px; font-family:var(--font-s); font-size:.95rem; cursor:pointer;
+  transition:all .2s; box-shadow:0 4px 12px rgba(13,59,110,.25); }
+.btn-join:hover { background:var(--navy); transform:translateY(-2px); box-shadow:0 8px 20px rgba(21,101,168,.3); }
+.btn-join:active { transform:translateY(0); }
+
+/* WAITING */
+.wc { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; }
+.pr { width:76px; height:76px; border-radius:50%; border:3px solid var(--navy);
+  animation:pr 1.5s ease-in-out infinite; display:flex; align-items:center; justify-content:center; font-size:1.8rem; }
+@keyframes pr { 0%,100%{box-shadow:0 0 0 0 rgba(21,101,168,.3)} 50%{box-shadow:0 0 0 18px rgba(21,101,168,0)} }
+.wt { font-family:var(--font-s); font-size:1.1rem; color:var(--deep); }
+.ws { font-size:.83rem; color:var(--tmuted); }
+.av-big { font-size:2.8rem; }
+.av-lbl { font-size:.7rem; color:var(--tmuted); letter-spacing:1px; text-transform:uppercase; }
+
+/* QUIZ */
+.qpb { height:5px; background:var(--border); border-radius:10px; margin-bottom:18px; overflow:hidden; }
+.qpf { height:100%; background:linear-gradient(90deg,var(--navy),var(--sky)); border-radius:10px; transition:width .5s ease; }
+.qc { font-size:.7rem; color:var(--tmuted); letter-spacing:2px; text-transform:uppercase; margin-bottom:7px; }
+.qt { font-family:var(--font-s); font-size:1.05rem; color:var(--deep); line-height:1.45; margin-bottom:20px; }
+.og { display:flex; flex-direction:column; gap:9px; margin-bottom:20px; }
+.ob { background:white; border:2px solid var(--border); border-radius:12px; padding:13px 14px;
+  color:var(--tdark); font-family:var(--font-u); font-size:.92rem; font-weight:600;
+  text-align:left; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:11px;
+  box-shadow:0 1px 4px rgba(13,59,110,.05); }
+.ob:hover { border-color:var(--navy); background:var(--pale); }
+.ob.sel { border-color:var(--navy); background:var(--pale); box-shadow:0 0 0 3px rgba(21,101,168,.12); }
+.ob.corr { border-color:var(--green); background:var(--green-l); }
+.ob.wrng { border-color:var(--red); background:var(--red-l); }
+.ob:disabled { cursor:default; }
+.ol { width:27px; height:27px; border-radius:50%; background:var(--pale); color:var(--navy);
+  display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:700; flex-shrink:0; }
+.ob.sel .ol { background:var(--navy); color:white; }
+.ob.corr .ol { background:var(--green); color:white; }
+.ob.wrng .ol { background:var(--red); color:white; }
+.nr { display:flex; gap:9px; }
+.bn { flex:1; padding:12px; border-radius:10px; border:none; font-family:var(--font-s);
+  font-size:.88rem; cursor:pointer; transition:all .2s; }
+.bn-prev { background:white; color:var(--tdark); border:1.5px solid var(--bord2); }
+.bn-prev:hover { background:var(--pale); }
+.bn-next { background:var(--navy); color:white; box-shadow:0 3px 10px rgba(21,101,168,.3); }
+.bn-next:hover { background:var(--mid); transform:translateY(-1px); }
+.bn-sub { background:var(--deep); color:white; width:100%; box-shadow:0 4px 12px rgba(13,59,110,.25); }
+.bn-sub:hover { background:var(--navy); transform:translateY(-1px); }
+
+/* RESULT */
+.rh { text-align:center; margin:16px 0; }
+.re { font-size:3.2rem; }
+.rs { font-family:var(--font-s); font-size:3.5rem; font-weight:700; color:var(--navy);
+  animation:sr .6s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes sr { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+.rl { font-size:.88rem; color:var(--tmuted); margin-top:3px; }
+.rg { font-family:var(--font-s); font-size:1.15rem; color:var(--deep); margin:10px 0; }
+.rst { display:flex; gap:10px; justify-content:center; margin:14px 0; }
+.rsc { background:white; border:1px solid var(--border); border-radius:12px; padding:11px 18px; text-align:center;
+  box-shadow:0 2px 6px rgba(13,59,110,.06); }
+.rsn { font-family:var(--font-s); font-size:1.5rem; font-weight:700; }
+.rsl { font-size:.65rem; color:var(--tmuted); text-transform:uppercase; letter-spacing:1px; }
+.corr-s .rsn { color:var(--green); }
+.wrng-s .rsn { color:var(--red); }
+.rev-t { font-size:.65rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--tmuted); margin:18px 0 10px; }
+.ri { background:white; border-radius:12px; padding:13px; margin-bottom:9px;
+  border-left:4px solid var(--border); box-shadow:0 1px 4px rgba(13,59,110,.05); }
+.ri.corr { border-left-color:var(--green); }
+.ri.wrng { border-left-color:var(--red); }
+.riq { font-size:.83rem; font-weight:600; color:var(--deep); margin-bottom:5px; }
+.ria { font-size:.78rem; }
+.ria-c { color:var(--green); }
+.ria-w { color:var(--red); }
+.rie { font-size:.73rem; color:var(--tmuted); margin-top:5px; line-height:1.4; }
+.lb-prev { background:white; border:1px solid var(--border); border-radius:13px; padding:14px; margin-top:14px;
+  box-shadow:0 2px 8px rgba(13,59,110,.06); }
+.lb-pt { font-size:.65rem; color:var(--tmuted); letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+.lb-row { display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid var(--border); }
+.lb-row:last-child { border-bottom:none; }
+.lb-rk { font-family:var(--font-s); font-weight:700; font-size:.87rem; min-width:22px; }
+.lb-nm { flex:1; font-size:.87rem; color:var(--tdark); }
+.lb-sc { font-family:var(--font-s); font-weight:700; font-size:.87rem; color:var(--navy); }
+.lb-row.me { background:var(--pale); border-radius:8px; padding:7px 8px; margin:-1px 0; }
+
+.err { background:var(--red-l); border:1px solid rgba(198,40,40,.3); border-radius:10px;
+  padding:11px 14px; font-size:.83rem; color:var(--red); margin-bottom:14px; }
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="bw bw1"></div>
+  <div class="bw bw2"></div>
+  <div class="bgrid"></div>
+  <div class="bc" style="width:240px;height:240px;top:-50px;right:-60px;animation-duration:8s;"></div>
+  <div class="bc" style="width:160px;height:160px;bottom:80px;left:-40px;animation-duration:10s;animation-delay:-4s;"></div>
+</div>
+
+<div class="app">
+  <div class="header">
+    <div class="hlogo">⚓ CustomsColab PRO</div>
+    <div class="hsub" id="sessionBar">Loading session…</div>
+  </div>
+  <div class="hacc"></div>
+
+  <!-- JOIN -->
+  <div class="screen active" id="sJoin">
+    <div class="join-hero">
+      <div class="ji">⚓</div>
+      <div class="jt">Join the Quiz</div>
+      <div class="js">Enter your details to participate</div>
+    </div>
+    <div class="form-card">
+      <div id="joinErr" class="err hidden"></div>
+      <label class="fl">Your Full Name / Badge ID</label>
+      <input class="fi" id="nameInput" placeholder="e.g. Officer Ramesh Kumar" autocomplete="off">
+      <button class="btn-join" onclick="joinSession()">⚡ Join Now</button>
+    </div>
+  </div>
+
+  <!-- WAITING -->
+  <div class="screen" id="sWait">
+    <div class="wc">
+      <div class="av-big" id="waitAv">🦁</div>
+      <div class="av-lbl">Your Avatar</div>
+      <div style="height:20px"></div>
+      <div class="pr">⏳</div>
+      <div class="wt">Waiting for session…</div>
+      <div class="ws">The trainer will begin shortly.</div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="sQuiz">
+    <div class="qpb"><div class="qpf" id="qpf" style="width:0%"></div></div>
+    <div class="qc" id="qCount">Question 1 of 5</div>
+    <div class="qt" id="qText"></div>
+    <div class="og" id="optGrid"></div>
+    <div class="nr" id="navRow"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="sResult">
+    <div class="rh">
+      <div class="re" id="resEmoji">🎉</div>
+      <div class="rs" id="resScore">0 XP</div>
+      <div class="rl" id="resLabel">out of 50 XP</div>
+      <div class="rg" id="resGrade"></div>
+    </div>
+    <div class="rst">
+      <div class="rsc corr-s"><div class="rsn" id="resC">0</div><div class="rsl">Correct ✓</div></div>
+      <div class="rsc wrng-s"><div class="rsn" id="resW">0</div><div class="rsl">Wrong ✗</div></div>
+    </div>
+    <div class="lb-prev hidden" id="lbPrev">
+      <div class="lb-pt">🏆 Live Leaderboard</div>
+      <div id="lbPrevBody"></div>
+    </div>
+    <div class="rev-t">Answer Review</div>
+    <div id="revBody"></div>
+  </div>
+
+</div>
+
+<script>
+const API = window.location.origin;
+const WSB = API.replace(/^http/, 'ws');
+let ws = null, userId = null, userName = null, userAvatar = '🦁';
+let quizData = [], userAnswers = [], currentQ = 0, submitted = false;
+
+function uid() {
+  let id = localStorage.getItem('cc_uid');
+  if (!id) { id = 'u_' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('cc_uid', id); }
+  return id;
+}
+
+function connectWS() {
+  if (!userId) return;
+  ws = new WebSocket(`${WSB}/ws/participant/${userId}`);
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === 'leaderboard_update') {
+      document.getElementById('sessionBar').textContent = m.session_name || '';
+      if (m.active && document.getElementById('sWait').classList.contains('active')) loadQuiz();
+      if (submitted) updateLBPrev(m.participants);
+    }
+    if (m.type === 'session_reset' && !submitted) showScreen('sJoin');
+  };
+  ws.onclose = () => setTimeout(connectWS, 3000);
+  ws.onerror = () => ws.close();
+  setInterval(() => { if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'ping'})); }, 20000);
+}
+
+async function joinSession() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { showErr('Please enter your name or badge ID.'); return; }
+  userId = uid(); userName = name;
+  try {
+    const r = await fetch(API + '/api/join', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id:userId, name})
+    });
+    if (!r.ok) { const e = await r.json(); showErr(e.detail || 'Failed to join.'); return; }
+    const data = await r.json();
+    userAvatar = data.avatar;
+    document.getElementById('waitAv').textContent = userAvatar;
+    connectWS();
+    await loadQuiz();
+  } catch(e) { showErr('Cannot connect. Is the session active?'); }
+}
+
+async function loadQuiz() {
+  try {
+    const r = await fetch(API + '/api/quiz');
+    if (!r.ok) { showScreen('sWait'); return; }
+    const data = await r.json();
+    quizData = data.quiz;
+    userAnswers = new Array(quizData.length).fill(-1);
+    currentQ = 0;
+    document.getElementById('sessionBar').textContent = data.session_name;
+    showScreen('sQuiz');
+    renderQ();
+  } catch(e) { showScreen('sWait'); }
+}
+
+const LETS = ['A','B','C','D'];
+
+function renderQ() {
+  const q = quizData[currentQ];
+  const tot = quizData.length;
+  document.getElementById('qCount').textContent = `Question ${currentQ+1} of ${tot}`;
+  document.getElementById('qText').textContent = q.question;
+  document.getElementById('qpf').style.width = `${(currentQ/tot)*100}%`;
+
+  document.getElementById('optGrid').innerHTML = q.options.map((opt, i) =>
+    `<button class="ob ${userAnswers[currentQ]===i?'sel':''}" onclick="selAns(${i})" id="o${i}">
+      <span class="ol">${LETS[i]}</span>${esc(opt)}
+    </button>`
+  ).join('');
+
+  const isLast = currentQ === tot - 1;
+  document.getElementById('navRow').innerHTML =
+    `${currentQ>0?`<button class="bn bn-prev" onclick="prevQ()">← Prev</button>`:''}
+     ${isLast
+       ? `<button class="bn bn-sub" onclick="submitQuiz()">✔ Submit All</button>`
+       : `<button class="bn bn-next" onclick="nextQ()">Next →</button>`}`;
+}
+
+function selAns(idx) {
+  userAnswers[currentQ] = idx;
+  document.querySelectorAll('.ob').forEach((b,i) => b.classList.toggle('sel', i===idx));
+  document.querySelectorAll('.ob').forEach((b,i) => { const ol = b.querySelector('.ol'); if(ol) ol.style.background = i===idx?'var(--navy)':''; ol && (ol.style.color = i===idx?'white':'var(--navy)'); });
+}
+function nextQ() { if(currentQ<quizData.length-1){currentQ++;renderQ();} }
+function prevQ() { if(currentQ>0){currentQ--;renderQ();} }
+
+async function submitQuiz() {
+  const ua = userAnswers.filter(a=>a===-1).length;
+  if (ua>0 && !confirm(`${ua} unanswered question(s). Submit anyway?`)) return;
+  try {
+    const r = await fetch(API + '/api/submit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id:userId, name:userName, answers:userAnswers})
+    });
+    const res = await r.json();
+    submitted = true;
+    showResult(res);
+  } catch(e) { alert('Submission failed. Check connection.'); }
+}
+
+function showResult(res) {
+  const tot = res.total || quizData.length;
+  const pct = Math.round(res.score/(tot*10)*100);
+  const grade = pct>=80?'🏅 Outstanding Officer':pct>=60?'✅ Competent Officer':pct>=40?'📚 Needs More Study':'🔄 Revisit the Material';
+  const emoji = pct>=60?'🎉':'📖';
+
+  document.getElementById('resEmoji').textContent = emoji;
+  document.getElementById('resScore').textContent = res.score + ' XP';
+  document.getElementById('resLabel').textContent = `out of ${tot*10} XP (${pct}%)`;
+  document.getElementById('resGrade').textContent = grade;
+  document.getElementById('resC').textContent = res.correct;
+  document.getElementById('resW').textContent = res.wrong;
+
+  const qFull = res.quiz_data || [];
+  const answers = res.answers || [];
+  document.getElementById('revBody').innerHTML = qFull.map((q,i) => {
+    const a = answers[i] || {};
+    const isC = a.correct;
+    const userAns = a.user_answer>=0 ? q.options[a.user_answer] : 'Not answered';
+    const corrAns = q.options[a.correct_answer ?? q.answer];
+    return `<div class="ri ${isC?'corr':'wrng'}">
+      <div class="riq">Q${i+1}: ${esc(q.question)}</div>
+      <div class="ria">
+        <span class="${isC?'ria-c':'ria-w'}">${isC?'✓':'✗'} Your answer: ${esc(userAns)}</span>
+        ${!isC?`<br><span class="ria-c">✔ Correct: ${esc(corrAns)}</span>`:''}
+      </div>
+      ${a.explanation?`<div class="rie">💡 ${esc(a.explanation)}</div>`:''}
+    </div>`;
+  }).join('');
+
+  showScreen('sResult');
+}
+
+function updateLBPrev(pts) {
+  if(!pts||!pts.length) return;
+  const prev = document.getElementById('lbPrev');
+  prev.classList.remove('hidden');
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('lbPrevBody').innerHTML = pts.slice(0,5).map((p,i) =>
+    `<div class="lb-row ${p.user_id===userId?'me':''}">
+      <span class="lb-rk">${medals[i]||('#'+(i+1))}</span>
+      <span style="font-size:1rem">${p.avatar}</span>
+      <span class="lb-nm">${esc(p.name)}${p.user_id===userId?' (You)':''}</span>
+      <span class="lb-sc">${p.score} XP</span>
+    </div>`
+  ).join('');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showErr(msg) {
+  const el = document.getElementById('joinErr');
+  el.textContent = msg; el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'),5000);
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function init() {
+  try {
+    const r = await fetch(API + '/api/state');
+    const s = await r.json();
+    document.getElementById('sessionBar').textContent = s.active ? s.session_name : 'No active session';
+  } catch(e) {}
+}
+init();
+</script>
+</body>
+</html>
