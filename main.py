@@ -340,16 +340,24 @@ def extract_text(filename: str, content: bytes) -> str:
 
 
 # ─────────────────────────────────────────────
-# AI QUIZ GENERATION
+# AI QUIZ GENERATION — multi-model fallback
+# Tries each free model in order until one works
 # ─────────────────────────────────────────────
-async def generate_quiz_ai(text: str, num_q: int = 5) -> list:
-    api_key = os.environ.get("OPENROUTER_API_KEY", "")
-    if not api_key:
-        return fallback_quiz()[:num_q]
 
-    prompt = f"""You are a Customs Expert Trainer for the Indian Revenue Service (IRS).
+# Models tried in order — all free tier on OpenRouter
+MODELS_TO_TRY = [
+    ("google/gemini-2.0-flash-exp:free",          "Gemini 2.0 Flash"),
+    ("meta-llama/llama-3.1-8b-instruct:free",     "Llama 3.1 8B"),
+    ("qwen/qwen3-coder:free",                      "Qwen3 Coder"),
+    ("deepseek/deepseek-r1:free",                  "DeepSeek R1"),
+    ("google/gemma-3-27b-it:free",                 "Gemma 3 27B"),
+    ("mistralai/mistral-7b-instruct:free",         "Mistral 7B"),
+]
+
+def _build_prompt(text: str, num_q: int) -> str:
+    return f"""You are an expert trainer creating a quiz from training material.
 Create exactly {num_q} Multiple Choice Questions from the text below.
-Focus on: HS Codes, Customs Valuation, IGST, Import/Export Compliance, Duty Calculation.
+Focus on key facts, concepts, rules, and procedures in the document.
 
 Return ONLY a valid JSON array. No markdown, no explanation, no backticks:
 [
@@ -365,32 +373,101 @@ Return ONLY a valid JSON array. No markdown, no explanation, no backticks:
 Text:
 {text[:5000]}
 """
+
+async def _try_model(client: httpx.AsyncClient, api_key: str, model_id: str, prompt: str) -> tuple:
+    """
+    Try a single model. Returns (quiz_list, error_string).
+    quiz_list is None if failed, error_string is None if succeeded.
+    """
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            r = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://customscolab.onrender.com",
-                    "X-Title": "CustomsColab Pro",
-                },
-                json={
-                    "model": "google/gemini-2.0-flash-001",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.3,
-                }
-            )
+        r = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://customsiq.app",
+                "X-Title": "CustomsIQ",
+            },
+            json={
+                "model": model_id,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+            }
+        )
+
+        # Check HTTP status
+        if r.status_code == 429:
+            return None, "rate_limited"
+        if r.status_code == 402:
+            return None, "insufficient_credits"
+        if r.status_code != 200:
+            return None, f"http_{r.status_code}"
+
         data = r.json()
+
+        # Check response structure
+        if "choices" not in data or not data["choices"]:
+            return None, "no_choices_in_response"
+
         raw = data["choices"][0]["message"]["content"].strip()
-        # Strip markdown fences
-        raw = re.sub(r"^```[a-z]*\n?", "", raw)
-        raw = re.sub(r"\n?```$", "", raw)
-        quiz = json.loads(raw.strip())
-        return [q for q in quiz if all(k in q for k in ["question", "options", "answer"])]
+
+        # Strip markdown fences if present
+        if raw.startswith("```json"):
+            raw = raw[7:]
+        elif raw.startswith("```"):
+            raw = raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        raw = raw.strip()
+
+        if not raw:
+            return None, "empty_response"
+
+        # Parse JSON
+        quiz = json.loads(raw)
+
+        # Validate structure
+        valid = [q for q in quiz if all(k in q for k in ["question", "options", "answer"])]
+        if not valid:
+            return None, "invalid_quiz_structure"
+
+        return valid, None
+
+    except json.JSONDecodeError as e:
+        return None, f"json_error: {str(e)[:80]}"
     except Exception as e:
-        print(f"AI error: {e}")
+        return None, f"error: {str(e)[:80]}"
+
+
+async def generate_quiz_ai(text: str, num_q: int = 5) -> list:
+    """
+    Try each model in MODELS_TO_TRY until one returns a valid quiz.
+    Falls back to built-in questions if all models fail.
+    """
+    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+    if not api_key:
+        logger.warning("No OPENROUTER_API_KEY — using fallback quiz")
         return fallback_quiz()[:num_q]
+
+    prompt = _build_prompt(text, num_q)
+    all_errors = []
+
+    async with httpx.AsyncClient(timeout=45) as client:
+        for i, (model_id, model_name) in enumerate(MODELS_TO_TRY, 1):
+            logger.info(f"Trying model {i}/{len(MODELS_TO_TRY)}: {model_name}")
+            quiz, error = await _try_model(client, api_key, model_id, prompt)
+
+            if quiz:
+                logger.info(f"✅ Success with {model_name} — {len(quiz)} questions generated")
+                return quiz[:num_q]
+            else:
+                logger.warning(f"❌ {model_name} failed: {error}")
+                all_errors.append(f"{model_name}: {error}")
+                # Small delay before next model to avoid hammering
+                await asyncio.sleep(0.5)
+
+    logger.error(f"All models failed: {' | '.join(all_errors)} — using fallback quiz")
+    return fallback_quiz()[:num_q]
 
 
 def fallback_quiz() -> list:
