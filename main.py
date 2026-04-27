@@ -345,13 +345,17 @@ def extract_text(filename: str, content: bytes) -> str:
 # ─────────────────────────────────────────────
 
 # Models tried in order — all free tier on OpenRouter
+# Updated with verified working model IDs April 2026
 MODELS_TO_TRY = [
-    ("google/gemini-2.0-flash-exp:free",          "Gemini 2.0 Flash"),
-    ("meta-llama/llama-3.1-8b-instruct:free",     "Llama 3.1 8B"),
-    ("qwen/qwen3-coder:free",                      "Qwen3 Coder"),
-    ("deepseek/deepseek-r1:free",                  "DeepSeek R1"),
-    ("google/gemma-3-27b-it:free",                 "Gemma 3 27B"),
-    ("mistralai/mistral-7b-instruct:free",         "Mistral 7B"),
+    ("qwen/qwen3-coder:free",                          "Qwen3 Coder"),
+    ("qwen/qwen3-next-80b-a3b-instruct:free",          "Qwen3 Next 80B"),
+    ("openai/gpt-oss-120b:free",                       "GPT OSS 120B"),
+    ("google/gemma-4-26b-a4b-it:free",                 "Gemma 4 26B"),
+    ("nousresearch/hermes-3-llama-3.1-405b:free",      "Hermes 3 Llama 405B"),
+    ("deepseek/deepseek-r1:free",                      "DeepSeek R1"),
+    ("google/gemini-2.0-flash-exp:free",               "Gemini 2.0 Flash"),
+    ("meta-llama/llama-3.1-8b-instruct:free",          "Llama 3.1 8B"),
+    ("mistralai/mistral-7b-instruct:free",             "Mistral 7B"),
 ]
 
 def _build_prompt(text: str, num_q: int) -> str:
@@ -400,8 +404,15 @@ async def _try_model(client: httpx.AsyncClient, api_key: str, model_id: str, pro
             return None, "rate_limited"
         if r.status_code == 402:
             return None, "insufficient_credits"
+        if r.status_code == 404:
+            # Model not found / wrong ID — log body for debugging
+            try:
+                err_body = r.json().get("error", {}).get("message", "model not found")
+            except Exception:
+                err_body = r.text[:100]
+            return None, f"model_not_found: {err_body[:80]}"
         if r.status_code != 200:
-            return None, f"http_{r.status_code}"
+            return None, f"http_{r.status_code}: {r.text[:80]}"
 
         data = r.json()
 
